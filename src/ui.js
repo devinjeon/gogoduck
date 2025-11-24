@@ -62,7 +62,7 @@ export class UI {
                 const blob = await response.blob();
                 const objectUrl = URL.createObjectURL(blob);
                 CONFIG.ASSETS[key] = objectUrl;
-                console.log(`Preloaded asset: ${key} -> ${objectUrl}`);
+
             } catch (error) {
                 console.error(`Failed to preload asset: ${url}`, error);
             }
@@ -417,7 +417,7 @@ export class UI {
             this.bgmAudio.currentTime = 0;
             this.bgmAudio.playbackRate = 1.25;
             this.bgmAudio.volume = 1.0;
-            this.bgmAudio.play().catch(err => console.log("BGM playback failed:", err));
+            this.bgmAudio.play().catch(err => console.error("BGM playback failed:", err));
         }
     }
 
@@ -450,14 +450,14 @@ export class UI {
     playWinSound() {
         if (this.winAudio) {
             this.winAudio.currentTime = 0;
-            this.winAudio.play().catch(err => console.log("Win sound playback failed:", err));
+            this.winAudio.play().catch(err => console.error("Win sound playback failed:", err));
         }
     }
 
     playClapSound() {
         if (this.clapAudio) {
             this.clapAudio.currentTime = 0;
-            this.clapAudio.play().catch(err => console.log("Clap sound playback failed:", err));
+            this.clapAudio.play().catch(err => console.error("Clap sound playback failed:", err));
         }
     }
 
