@@ -463,7 +463,7 @@ export class UI {
 
     // --- Results ---
 
-    async showResults(finishedDucks, allParticipants, drawDirection, drawRank) {
+    async showResults(finishedDucks, allParticipants, drawDirection, drawRank, camera) {
         let sortedList = [];
         if (drawDirection === "front") {
             sortedList = [...finishedDucks].sort((a, b) => a.finishTime - b.finishTime);
@@ -496,7 +496,7 @@ export class UI {
         if (this.raceFinishOverlay) this.raceFinishOverlay.classList.add("hidden");
 
         for (const winner of winners) {
-            await this.zoomAndHighlightWinner(winner);
+            await this.zoomAndHighlightWinner(winner, camera);
         }
 
         this.resultsList.innerHTML = "";
@@ -523,12 +523,12 @@ export class UI {
         this.resultsModalOverlay.classList.remove("hidden");
     }
 
-    async zoomAndHighlightWinner(participant) {
+    async zoomAndHighlightWinner(participant, camera) {
         this.playWinSound();
 
         // 1. Zoom In
         this.mainUiContainer.style.transition = `transform ${CONFIG.HIGHLIGHT_ZOOM_DURATION / 1000}s ease-in-out`;
-        this.applyZoomToWinnerTransform(participant);
+        camera.applyZoomToWinnerTransform(participant);
 
         if (participant.fireworksContainer) {
             participant.fireworksContainer.classList.add("fireworks-active");
@@ -560,27 +560,6 @@ export class UI {
 
         this.mainUiContainer.style.transformOrigin = "50% 50%";
         await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    applyZoomToWinnerTransform(participant) {
-        if (!participant) return;
-
-        const trackRect = this.mainUiContainer.getBoundingClientRect();
-        const duckRect = participant.element.getBoundingClientRect();
-
-        this.mainUiContainer.style.transformOrigin = "0 0";
-
-        const containerCenterX = trackRect.width / 2;
-        const containerCenterY = trackRect.height / 2;
-        const duckRelativeX = duckRect.left - trackRect.left + duckRect.width / 2;
-        const duckRelativeY = duckRect.top - trackRect.top + duckRect.height / 2;
-
-        const t1x = -duckRelativeX;
-        const t1y = -duckRelativeY;
-        const t2x = containerCenterX;
-        const t2y = containerCenterY;
-
-        this.mainUiContainer.style.transform = `translate(${t2x}px, ${t2y}px) scale(${CONFIG.HIGHLIGHT_ZOOM_SCALE}) translate(${t1x}px, ${t1y}px)`;
     }
 
     // --- Sharing ---

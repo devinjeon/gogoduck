@@ -506,7 +506,7 @@ export class Game {
                 this.ui.removeParticipantClass(p, "boosting", "flying");
             }
 
-            setTimeout(() => this.ui.showResults(this.finishedDucks, this.participants, this.drawDirection, this.drawRank), 500);
+            setTimeout(() => this.ui.showResults(this.finishedDucks, this.participants, this.drawDirection, this.drawRank, this.camera), 500);
         }
     }
 

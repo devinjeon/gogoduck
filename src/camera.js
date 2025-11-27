@@ -242,6 +242,27 @@ export class Camera {
         this.uiContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${CONFIG.IN_RACE_ZOOM_SCALE})`;
     }
 
+    applyZoomToWinnerTransform(participant) {
+        if (!participant) return;
+
+        const trackRect = this.uiContainer.getBoundingClientRect();
+        const duckRect = participant.element.getBoundingClientRect();
+
+        this.uiContainer.style.transformOrigin = "0 0";
+
+        const containerCenterX = trackRect.width / 2;
+        const containerCenterY = trackRect.height / 2;
+        const duckRelativeX = duckRect.left - trackRect.left + duckRect.width / 2;
+        const duckRelativeY = duckRect.top - trackRect.top + duckRect.height / 2;
+
+        const t1x = -duckRelativeX;
+        const t1y = -duckRelativeY;
+        const t2x = containerCenterX;
+        const t2y = containerCenterY;
+
+        this.uiContainer.style.transform = `translate(${t2x}px, ${t2y}px) scale(${CONFIG.HIGHLIGHT_ZOOM_SCALE}) translate(${t1x}px, ${t1y}px)`;
+    }
+
     resetRequest() {
         // Check for changes before resetting
         const current = this.currentRequest;
