@@ -24,16 +24,16 @@ export const CONFIG = {
     ZOOM_COOLDOWN_DURATION: 1000,
 
     // 경주 중 줌 인 했을 때의 확대 배율.
-    IN_RACE_ZOOM_SCALE: 1.5,
+    IN_RACE_ZOOM_SCALE: 1.3,
 
     // 결과 화면에서 우승자를 강조할 때의 확대 배율.
     HIGHLIGHT_ZOOM_SCALE: 2,
 
     // 경주 중 줌 인에 걸리는 시간 (ms).
-    ZOOM_DURATION: 200,
+    ZOOM_DURATION: 300,
 
     // 경주 중 줌 아웃에 걸리는 시간 (ms).
-    ZOOM_OUT_DURATION: 100,
+    ZOOM_OUT_DURATION: 200,
 
     // 결과 화면에서 우승자 강조 줌 인에 걸리는 시간 (ms).
     HIGHLIGHT_ZOOM_DURATION: 400,
