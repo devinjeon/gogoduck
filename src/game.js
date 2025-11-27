@@ -104,6 +104,7 @@ export class Game {
         for (const p of this.participants) {
             this.ui.updateRankVisuals(p, this.drawDirection, this.drawRank, this.participants.length);
             this.checkCameraEvents(p);
+            this.checkActiveGimmicks(p);
         }
 
         // 70% Lock Logic
@@ -541,25 +542,34 @@ export class Game {
         if (duck.position < CONFIG.THRESHOLDS.CONFUSION_MIN_POS || duck.position > CONFIG.THRESHOLDS.CONFUSION_MAX_POS) return false;
 
         if (this.drawDirection === "front") {
-            // Target top N ducks (where N is drawRank)
             if (duck.currentRank > this.drawRank) return false;
         } else {
-            // For 'back', maybe target the last N ducks? Or just keep it random?
-            // The request specifically said "target top n ducks (front n rank)".
-            // Let's assume it applies when drawDirection is front.
-            // If drawDirection is back, maybe we shouldn't trigger confusion on the winners (losers)?
-            // Or maybe the logic should be consistent: "Top N" always means Rank 1..N.
-            // But if the goal is to mess with the potential winners...
-            // User request: "CONFUSION_MAX_RANK는 없애고 추첨 대상(앞에서 n등까지)일때 n등까지로 한정하도록 수정해줘"
-            // "When draw target is (front n rank), limit to n rank".
-            // So if drawDirection is back, this condition might not apply or might be different.
-            // For now, let's strictly follow "limit to n rank".
-            // If drawDirection is back, the "winners" are at the bottom.
-            // Let's just apply it for front for now as per "target (front n rank)".
-            // If drawDirection is NOT front, we might fall back to a default or disable it?
-            // Let's assume it only restricts for 'front'.
             if (duck.currentRank > this.drawRank) return false;
         }
         return true;
+    }
+
+    checkActiveGimmicks(p) {
+        if (p.state === "finished" || p.state === "stopped") return;
+
+        if (p.isSuperBoosting) {
+            if (this.camera.isSeventyPercentLockActive) {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.LOCK_70_PERCENT + 1, "Super Booster (Override)");
+            } else {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.SUPER_BOOSTER, "Super Booster");
+            }
+        } else if (p.isDistracted) {
+            if (this.camera.isSeventyPercentLockActive) {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.LOCK_70_PERCENT + 1, "Distracted Duck (Override)");
+            } else {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.DISTRACTION, "Distracted Duck");
+            }
+        } else if (p.isConfused) {
+            if (this.camera.isSeventyPercentLockActive) {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.LOCK_70_PERCENT + 1, "Confused Duck (Override)");
+            } else {
+                this.camera.requestZoom(p, CONFIG.CAMERA_ZOOM.CONFUSION, "Confused Duck");
+            }
+        }
     }
 }

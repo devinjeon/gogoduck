@@ -8,26 +8,38 @@ export class Camera {
     constructor(uiContainer) {
         this.uiContainer = uiContainer;
         this.state = "idle"; // 'idle', 'zooming', 'tracking', 'panning', 'zooming-out'
-        this.target = null; // The participant object to zoom in on
+        this._target = null; // Internal target
         this.targetPriority = 0; // Priority of the current target
         this.timer = 0; // ms
         this.currentRequest = { target: null, priority: 0, reason: "" }; // The highest priority zoom request per tick
         this.zoomCooldownTimer = 0; // Cooldown timer for zooming before 70%
         this.lockTargetIndex = -1; // -1: inactive, 0~: index of targetWinners
         this.pendingZoomRequest = null; // Next camera request to switch to after zooming out
-        this.pendingZoomRequest = null; // Next camera request to switch to after zooming out
         this.isSeventyPercentLockActive = false;
         this.minHoldTimer = 0;
+        this.lastFrameRequest = { target: null, priority: 0, reason: "" }; // Track previous frame's winner
+    }
+
+    get target() {
+        return this._target;
+    }
+
+    set target(value) {
+        if (this._target !== value) {
+
+            this._target = value;
+        }
     }
 
     reset(isHardReset) {
         this.state = "idle";
         this.target = null;
         this.targetPriority = 0;
-        this.targetPriority = 0;
         this.timer = 0;
         this.zoomCooldownTimer = 0;
+
         this.minHoldTimer = 0;
+        this.lastFrameRequest = { target: null, priority: 0, reason: "" };
 
         if (isHardReset) {
             this.lockTargetIndex = -1;
@@ -78,6 +90,19 @@ export class Camera {
 
         if (this.state === "zooming" || this.state === "tracking") {
             const newRequestIsHigher = this.currentRequest.priority > this.targetPriority;
+            const is70PercentSwitch = this.isSeventyPercentLockActive &&
+                this.currentRequest.priority === this.targetPriority &&
+                this.currentRequest.target !== this.target;
+
+            // Optimization: If target is same, just update priority and timer, don't switch state (avoid phantom panning)
+            if (newRequestIsHigher && this.currentRequest.target === this.target) {
+                this.targetPriority = this.currentRequest.priority;
+                // If we are tracking, we might want to extend the timer if priority is high enough
+                if (this.state === "tracking" && this.targetPriority >= 110) {
+                    this.timer = Math.max(this.timer, CONFIG.LONG_TRACK_DURATION);
+                }
+                return;
+            }
 
             // Only check for switch if we are tracking (stable) and hold time has passed
             if (this.state === "tracking") {
@@ -85,7 +110,7 @@ export class Camera {
                     this.minHoldTimer -= tickDuration;
                 }
 
-                if (newRequestIsHigher && this.minHoldTimer <= 0) {
+                if ((newRequestIsHigher || is70PercentSwitch) && this.minHoldTimer <= 0) {
                     if (this.isSeventyPercentLockActive) {
                         // Special case for 70% lock override return or switch
                         // If we are overriding, we might want to pan back if possible, 
@@ -107,6 +132,7 @@ export class Camera {
                         this.applyTransform();
                     }
                     return;
+                } else if (newRequestIsHigher || is70PercentSwitch) {
                 }
             }
 
@@ -131,7 +157,8 @@ export class Camera {
 
                 this.timer -= tickDuration;
 
-                if (this.target.state === "finished" || this.target.state === "stopped") {
+                if ((this.target.state === "finished" || this.target.state === "stopped") && this.minHoldTimer <= 0) {
+
                     let nextTarget = null;
                     if (this.isSeventyPercentLockActive) {
                         nextTarget = targetWinners.find(
@@ -168,6 +195,7 @@ export class Camera {
             if (this.timer <= 0) {
                 this.state = "tracking";
                 this.timer = this.targetPriority >= 110 ? CONFIG.LONG_TRACK_DURATION : CONFIG.SHORT_TRACK_DURATION;
+                this.minHoldTimer = CONFIG.MIN_PAN_HOLD_DURATION;
                 this.uiContainer.style.transition = "none";
             }
             return;
@@ -215,6 +243,15 @@ export class Camera {
     }
 
     resetRequest() {
+        // Check for changes before resetting
+        const current = this.currentRequest;
+        const last = this.lastFrameRequest;
+
+        const isTargetChanged = current.target !== last.target;
+        const isPriorityChanged = current.priority !== last.priority;
+        const isReasonChanged = current.reason !== last.reason;
+
+        this.lastFrameRequest = { ...this.currentRequest };
         this.currentRequest = { target: null, priority: 0, reason: "" };
     }
 }

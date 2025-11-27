@@ -48,7 +48,10 @@ export const CONFIG = {
     SHORT_TRACK_DURATION: 1500,
 
     // 줌 상태를 유지해야 하는 최소 시간 (ms). 이 시간 동안은 더 높은 우선순위 요청이 와도 전환되지 않음(패닝 제외).
-    MIN_ZOOM_HOLD_DURATION: 200,
+    MIN_ZOOM_HOLD_DURATION: 1300,
+
+    // 패닝 후 대상을 유지해야 하는 최소 시간 (ms).
+    MIN_PAN_HOLD_DURATION: 1700,
 
     CAMERA_ZOOM: {
         // 슈퍼 부스터 발동 시 카메라 우선순위.
