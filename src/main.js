@@ -8,6 +8,7 @@ import { CONFIG } from './config.js';
 import { Camera } from './camera.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
+import { STORAGE_KEYS, PARTICIPANT_STATE } from './const.js';
 
 document.addEventListener("DOMContentLoaded", () => {
     // --- Initialization ---
@@ -60,9 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Helper Functions ---
 
     function loadSettingsFromLocalStorage() {
-        const savedParticipants = localStorage.getItem("duckRaceParticipants");
-        const savedDrawDirection = localStorage.getItem("duckRaceDrawDirection");
-        const savedDrawRank = localStorage.getItem("duckRaceDrawRank");
+        const savedParticipants = localStorage.getItem(STORAGE_KEYS.PARTICIPANTS);
+        const savedDrawDirection = localStorage.getItem(STORAGE_KEYS.DRAW_DIRECTION);
+        const savedDrawRank = localStorage.getItem(STORAGE_KEYS.DRAW_RANK);
 
         if (savedParticipants !== null) {
             ui.setParticipantsInput(savedParticipants);
@@ -71,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else {
             ui.setParticipantsInput(CONFIG.DEFAULT_PARTICIPANT_LIST);
-            localStorage.setItem("duckRaceParticipants", CONFIG.DEFAULT_PARTICIPANT_LIST);
+            localStorage.setItem(STORAGE_KEYS.PARTICIPANTS, CONFIG.DEFAULT_PARTICIPANT_LIST);
         }
 
         if (savedDrawDirection) {
@@ -83,9 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function saveSettingsToLocalStorage() {
         const currentValue = ui.getParticipantsInput();
-        localStorage.setItem("duckRaceParticipants", currentValue);
-        localStorage.setItem("duckRaceDrawDirection", ui.getDrawDirection());
-        localStorage.setItem("duckRaceDrawRank", ui.getDrawRank());
+        localStorage.setItem(STORAGE_KEYS.PARTICIPANTS, currentValue);
+        localStorage.setItem(STORAGE_KEYS.DRAW_DIRECTION, ui.getDrawDirection());
+        localStorage.setItem(STORAGE_KEYS.DRAW_RANK, ui.getDrawRank());
 
         if (currentValue === "") {
             ui.setParticipantsPlaceholder("예) " + CONFIG.DEFAULT_PARTICIPANT_LIST);
@@ -101,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Restore saved rank if valid
         if (isNaN(previousValue)) {
-            const savedDrawRank = localStorage.getItem("duckRaceDrawRank");
+            const savedDrawRank = localStorage.getItem(STORAGE_KEYS.DRAW_RANK);
             let valueToSelect = 1;
             if (savedDrawRank) {
                 const savedRankNum = parseInt(savedDrawRank, 10);
@@ -183,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 flyCount: CONFIG.LIMITS.FLY_INITIAL,
                 fallCount: CONFIG.LIMITS.FALL_LIMIT,
                 boostProb: CONFIG.PROBABILITIES.BOOST_MAX,
-                state: "running",
+                state: PARTICIPANT_STATE.RUNNING,
                 position: 0,
                 finishTime: 0,
                 fallTimer: 0,

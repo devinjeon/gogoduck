@@ -3,11 +3,12 @@
  * Copyright (c) 2025 devinjeon (Hyojun Jeon)
  */
 import { CONFIG } from './config.js';
+import { CAMERA_STATE, PARTICIPANT_STATE } from './const.js';
 
 export class Camera {
     constructor(uiContainer) {
         this.uiContainer = uiContainer;
-        this.state = "idle"; // 'idle', 'zooming', 'tracking', 'panning', 'zooming-out'
+        this.state = CAMERA_STATE.IDLE; // 'idle', 'zooming', 'tracking', 'panning', 'zooming-out'
         this._target = null; // Internal target
         this.targetPriority = 0; // Priority of the current target
         this.timer = 0; // ms
@@ -32,7 +33,7 @@ export class Camera {
     }
 
     reset(isHardReset) {
-        this.state = "idle";
+        this.state = CAMERA_STATE.IDLE;
         this.target = null;
         this.targetPriority = 0;
         this.timer = 0;
@@ -69,7 +70,7 @@ export class Camera {
             this.zoomCooldownTimer -= tickDuration;
         }
 
-        if (this.state === "idle") {
+        if (this.state === CAMERA_STATE.IDLE) {
             if (this.pendingZoomRequest) {
                 this.currentRequest = this.pendingZoomRequest;
                 this.pendingZoomRequest = null;
@@ -81,14 +82,14 @@ export class Camera {
 
             this.target = this.currentRequest.target;
             this.targetPriority = this.currentRequest.priority;
-            this.state = "zooming";
+            this.state = CAMERA_STATE.ZOOMING;
             this.timer = CONFIG.ZOOM_DURATION;
             this.uiContainer.style.transition = `transform ${CONFIG.ZOOM_DURATION / 1000}s ease-in-out`;
             this.applyTransform();
             return;
         }
 
-        if (this.state === "zooming" || this.state === "tracking") {
+        if (this.state === CAMERA_STATE.ZOOMING || this.state === CAMERA_STATE.TRACKING) {
             const newRequestIsHigher = this.currentRequest.priority > this.targetPriority;
             const is70PercentSwitch = this.isSeventyPercentLockActive &&
                 this.currentRequest.priority === this.targetPriority &&
@@ -98,14 +99,14 @@ export class Camera {
             if (newRequestIsHigher && this.currentRequest.target === this.target) {
                 this.targetPriority = this.currentRequest.priority;
                 // If we are tracking, we might want to extend the timer if priority is high enough
-                if (this.state === "tracking" && this.targetPriority >= 110) {
+                if (this.state === CAMERA_STATE.TRACKING && this.targetPriority >= 110) {
                     this.timer = Math.max(this.timer, CONFIG.LONG_TRACK_DURATION);
                 }
                 return;
             }
 
             // Only check for switch if we are tracking (stable) and hold time has passed
-            if (this.state === "tracking") {
+            if (this.state === CAMERA_STATE.TRACKING) {
                 if (this.minHoldTimer > 0) {
                     this.minHoldTimer -= tickDuration;
                 }
@@ -119,14 +120,14 @@ export class Camera {
 
                         this.target = this.currentRequest.target;
                         this.targetPriority = this.currentRequest.priority;
-                        this.state = "panning";
+                        this.state = CAMERA_STATE.PANNING;
                         this.timer = 500;
                         this.uiContainer.style.transition = `transform 0.5s ease-in-out`;
                         this.applyTransform();
                     } else {
                         this.target = this.currentRequest.target;
                         this.targetPriority = this.currentRequest.priority;
-                        this.state = "panning";
+                        this.state = CAMERA_STATE.PANNING;
                         this.timer = 500;
                         this.uiContainer.style.transition = `transform 0.5s ease-in-out`;
                         this.applyTransform();
@@ -136,10 +137,10 @@ export class Camera {
                 }
             }
 
-            if (this.state === "zooming") {
+            if (this.state === CAMERA_STATE.ZOOMING) {
                 this.timer -= tickDuration;
                 if (this.timer <= 0) {
-                    this.state = "tracking";
+                    this.state = CAMERA_STATE.TRACKING;
                     this.timer = this.targetPriority >= 110 ? CONFIG.LONG_TRACK_DURATION : CONFIG.SHORT_TRACK_DURATION;
                     this.minHoldTimer = CONFIG.MIN_ZOOM_HOLD_DURATION;
                     this.uiContainer.style.transition = "none";
@@ -149,7 +150,7 @@ export class Camera {
                 return;
             }
 
-            if (this.state === "tracking") {
+            if (this.state === CAMERA_STATE.TRACKING) {
                 // Refresh timer if we are still targeting the same thing with high priority
                 if (this.currentRequest.target === this.target && this.currentRequest.priority >= this.targetPriority) {
                     this.timer = Math.max(this.timer, this.targetPriority >= 110 ? CONFIG.LONG_TRACK_DURATION : CONFIG.SHORT_TRACK_DURATION);
@@ -157,32 +158,32 @@ export class Camera {
 
                 this.timer -= tickDuration;
 
-                if ((this.target.state === "finished" || this.target.state === "stopped") && this.minHoldTimer <= 0) {
+                if ((this.target.state === PARTICIPANT_STATE.FINISHED || this.target.state === PARTICIPANT_STATE.STOPPED) && this.minHoldTimer <= 0) {
 
                     let nextTarget = null;
                     if (this.isSeventyPercentLockActive) {
                         nextTarget = targetWinners.find(
-                            (p) => p.state !== "finished" && p.state !== "stopped",
+                            (p) => p.state !== PARTICIPANT_STATE.FINISHED && p.state !== PARTICIPANT_STATE.STOPPED,
                         );
                     }
 
                     if (nextTarget) {
                         this.target = nextTarget;
                         this.targetPriority = 120;
-                        this.state = "panning";
+                        this.state = CAMERA_STATE.PANNING;
                         this.timer = 500;
                         this.uiContainer.style.transition = `transform 0.5s ease-in-out`;
                         this.applyTransform();
                     } else {
                         this.isSeventyPercentLockActive = false;
                         this.lockTargetIndex = -1;
-                        this.state = "zooming-out";
+                        this.state = CAMERA_STATE.ZOOMING_OUT;
                         this.timer = CONFIG.ZOOM_OUT_DURATION;
                         this.uiContainer.style.transition = `transform ${CONFIG.ZOOM_OUT_DURATION / 1000}s ease-in-out`;
                         this.uiContainer.style.transform = "translate(0px, 0px) scale(1)";
                     }
                 } else if (this.timer <= 0) {
-                    this.state = "zooming-out";
+                    this.state = CAMERA_STATE.ZOOMING_OUT;
                     this.timer = CONFIG.ZOOM_OUT_DURATION;
                     this.uiContainer.style.transition = `transform ${CONFIG.ZOOM_OUT_DURATION / 1000}s ease-in-out`;
                     this.uiContainer.style.transform = "translate(0px, 0px) scale(1)";
@@ -190,17 +191,17 @@ export class Camera {
             }
             this.applyTransform();
             return;
-        } else if (this.state === "panning") {
+        } else if (this.state === CAMERA_STATE.PANNING) {
             this.timer -= tickDuration;
             if (this.timer <= 0) {
-                this.state = "tracking";
+                this.state = CAMERA_STATE.TRACKING;
                 this.timer = this.targetPriority >= 110 ? CONFIG.LONG_TRACK_DURATION : CONFIG.SHORT_TRACK_DURATION;
                 this.minHoldTimer = CONFIG.MIN_PAN_HOLD_DURATION;
                 this.uiContainer.style.transition = "none";
             }
             return;
         }
-        if (this.state === "zooming-out") {
+        if (this.state === CAMERA_STATE.ZOOMING_OUT) {
             this.timer -= tickDuration;
 
             if (this.currentRequest.priority >= 120) {

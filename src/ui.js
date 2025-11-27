@@ -4,6 +4,7 @@
  */
 import html2canvas from 'html2canvas';
 import { CONFIG, SPEECH_LINES } from './config.js';
+import { PARTICIPANT_STATE, DRAW_DIRECTION } from './const.js';
 
 export class UI {
     constructor() {
@@ -299,7 +300,7 @@ export class UI {
     }
 
     updateParticipantVisuals(p) {
-        if (p.state !== "finished" && p.state !== "stopped") {
+        if (p.state !== PARTICIPANT_STATE.FINISHED && p.state !== PARTICIPANT_STATE.STOPPED) {
             const pixelOffset = (p.position / CONFIG.FINISH_LINE_POS) * 50;
             p.element.style.left = `calc(${p.position}% - ${pixelOffset}px - 15px)`;
         }
@@ -325,11 +326,11 @@ export class UI {
     }
 
     updateRankVisuals(p, drawDirection, drawRank, totalParticipants) {
-        if (p.rankElement && p.state !== "finished" && p.state !== "stopped") {
+        if (p.rankElement && p.state !== PARTICIPANT_STATE.FINISHED && p.state !== PARTICIPANT_STATE.STOPPED) {
             p.rankElement.textContent = ` (${p.currentRank}등)`;
 
-            const isFrontWinner = drawDirection === "front" && p.currentRank <= drawRank;
-            const isBackWinner = drawDirection === "back" && p.currentRank >= totalParticipants - drawRank + 1;
+            const isFrontWinner = drawDirection === DRAW_DIRECTION.FRONT && p.currentRank <= drawRank;
+            const isBackWinner = drawDirection === DRAW_DIRECTION.BACK && p.currentRank >= totalParticipants - drawRank + 1;
 
             if (isFrontWinner || isBackWinner) {
                 p.rankElement.classList.add("duck-rank-highlight");
@@ -465,11 +466,11 @@ export class UI {
 
     async showResults(finishedDucks, allParticipants, drawDirection, drawRank, camera) {
         let sortedList = [];
-        if (drawDirection === "front") {
+        if (drawDirection === DRAW_DIRECTION.FRONT) {
             sortedList = [...finishedDucks].sort((a, b) => a.finishTime - b.finishTime);
         } else {
             const finishers = [...finishedDucks].sort((a, b) => a.finishTime - b.finishTime);
-            const nonFinishers = [...allParticipants].filter(p => p.state !== "finished").sort((a, b) => b.position - a.position);
+            const nonFinishers = [...allParticipants].filter(p => p.state !== PARTICIPANT_STATE.FINISHED).sort((a, b) => b.position - a.position);
             sortedList = [...finishers, ...nonFinishers];
             sortedList.forEach((p, index) => { p.currentRank = index + 1; });
         }
@@ -477,7 +478,7 @@ export class UI {
         let winners = [];
         let title = "";
 
-        if (drawDirection === "front") {
+        if (drawDirection === DRAW_DIRECTION.FRONT) {
             const rankText = drawRank == 1 ? "1등만" : `${drawRank}등까지`;
             title = `🎉 앞에서 ${rankText} 당첨! 🎉`;
             winners = sortedList.slice(0, drawRank);
@@ -501,7 +502,7 @@ export class UI {
 
         this.resultsList.innerHTML = "";
         if (winners.length > 0) {
-            if (drawDirection === "back") winners.sort((a, b) => b.currentRank - a.currentRank);
+            if (drawDirection === DRAW_DIRECTION.BACK) winners.sort((a, b) => b.currentRank - a.currentRank);
             else winners.sort((a, b) => a.currentRank - b.currentRank);
 
             winners.forEach(winner => {

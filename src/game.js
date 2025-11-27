@@ -3,6 +3,7 @@
  * Copyright (c) 2025 devinjeon (Hyojun Jeon)
  */
 import { CONFIG } from './config.js';
+import { PARTICIPANT_STATE, DRAW_DIRECTION } from './const.js';
 
 export class Game {
     constructor(ui, camera) {
@@ -15,7 +16,7 @@ export class Game {
         this.gameInterval = null;
         this.targetWinners = [];
 
-        this.drawDirection = "front";
+        this.drawDirection = DRAW_DIRECTION.FRONT;
         this.drawRank = 1;
         this.isRaceZoomEnabled = false;
 
@@ -85,7 +86,7 @@ export class Game {
 
         // LOOP 1: Physics and State Updates
         for (const p of this.participants) {
-            if (p.state === "finished" || p.state === "stopped") continue;
+            if (p.state === PARTICIPANT_STATE.FINISHED || p.state === PARTICIPANT_STATE.STOPPED) continue;
 
             this.updateParticipantState(p, tickDuration);
             this.checkGimmicks(p, tickDuration);
@@ -125,8 +126,8 @@ export class Game {
             if (p.flyTimer <= 0) {
                 p.isFlying = false;
                 this.ui.removeParticipantClass(p, "flying", "boosting");
-                p.state = "recovering";
-                if (p.state !== "falling") {
+                p.state = PARTICIPANT_STATE.RECOVERING;
+                if (p.state !== PARTICIPANT_STATE.FALLING) {
                     p.spriteElement.src = p.isBoosting ? CONFIG.ASSETS.RUNNING : CONFIG.ASSETS.WALKING;
                 }
             }
@@ -137,8 +138,8 @@ export class Game {
             if (p.boostTimer <= 0) {
                 p.isBoosting = false;
                 this.ui.removeParticipantClass(p, "boosting");
-                if (p.state !== "falling") {
-                    p.state = "recovering";
+                if (p.state !== PARTICIPANT_STATE.FALLING) {
+                    p.state = PARTICIPANT_STATE.RECOVERING;
                     p.graceTimer = CONFIG.DURATIONS.GRACE_RECOVER;
                     p.spriteElement.src = CONFIG.ASSETS.WALKING;
                 }
@@ -150,7 +151,7 @@ export class Game {
             if (p.superBoosterTimer <= 0) {
                 p.isSuperBoosting = false;
                 this.ui.removeParticipantClass(p, "super-boosting");
-                p.state = "recovering";
+                p.state = PARTICIPANT_STATE.RECOVERING;
                 p.graceTimer = CONFIG.DURATIONS.GRACE_RECOVER;
                 p.spriteElement.src = CONFIG.ASSETS.WALKING;
             }
@@ -161,7 +162,7 @@ export class Game {
             if (p.distractionTimer <= 0) {
                 p.isDistracted = false;
                 this.ui.removeParticipantClass(p, "distracted");
-                if (!p.isFlying && !p.isBoosting && !p.isSuperBoosting && p.state !== "falling") {
+                if (!p.isFlying && !p.isBoosting && !p.isSuperBoosting && p.state !== PARTICIPANT_STATE.FALLING) {
                     p.spriteElement.src = CONFIG.ASSETS.WALKING;
                 }
             }
@@ -177,18 +178,18 @@ export class Game {
             }
         }
         // Falling / Recovering
-        if (p.state === "falling") {
+        if (p.state === PARTICIPANT_STATE.FALLING) {
             p.fallTimer -= tickDuration;
             if (p.fallTimer <= 0) {
-                p.state = "recovering";
+                p.state = PARTICIPANT_STATE.RECOVERING;
                 p.graceTimer = CONFIG.DURATIONS.GRACE_RECOVER;
                 this.ui.removeParticipantClass(p, "falling");
                 p.spriteElement.src = CONFIG.ASSETS.WALKING;
             }
-        } else if (p.state === "recovering") {
+        } else if (p.state === PARTICIPANT_STATE.RECOVERING) {
             p.graceTimer -= tickDuration;
             if (p.graceTimer <= 0) {
-                p.state = "running";
+                p.state = PARTICIPANT_STATE.RUNNING;
                 p.spriteElement.src = p.isBoosting && !p.isFlying ? CONFIG.ASSETS.RUNNING : CONFIG.ASSETS.WALKING;
             }
         }
@@ -198,21 +199,21 @@ export class Game {
         p.isConfused = false;
         p.confusionTimer = 0;
         this.ui.removeParticipantClass(p, "confused");
-        if (!p.isFlying && !p.isBoosting && !p.isSuperBoosting && p.state !== "falling") {
+        if (!p.isFlying && !p.isBoosting && !p.isSuperBoosting && p.state !== PARTICIPANT_STATE.FALLING) {
             p.spriteElement.src = CONFIG.ASSETS.WALKING;
         }
         this.ui.showSpeech(p, "confusionEnd", 500);
     }
 
     checkGimmicks(p, tickDuration) {
-        if (p.state === "falling") return;
+        if (p.state === PARTICIPANT_STATE.FALLING) return;
 
         p.timeSinceLastFallCheck += tickDuration;
         if (p.timeSinceLastFallCheck >= CONFIG.GIMMICK_CHECK_INTERVAL) {
             p.timeSinceLastFallCheck = 0;
 
             const isTargetWinner = this.targetWinners.some(t => t.name === p.name);
-            const isBusy = p.isFlying || p.isBoosting || p.isSuperBoosting || p.isDistracted || p.isConfused || p.state === "falling" || p.state === "recovering";
+            const isBusy = p.isFlying || p.isBoosting || p.isSuperBoosting || p.isDistracted || p.isConfused || p.state === PARTICIPANT_STATE.FALLING || p.state === PARTICIPANT_STATE.RECOVERING;
 
             let willSuperBoost = false, willDistract = false, willConfuse = false, willFly = false, willFall = false, willBoost = false;
 
@@ -237,10 +238,10 @@ export class Game {
                 if (!willFly && !willSuperBoost && !willDistract && !willConfuse && p.fallCount > 0) {
                     willFall = Math.random() < fallProb;
                 }
-                if (!willFly && !willSuperBoost && !willDistract && !willConfuse && p.state === "running" && p.boostCount > 0) {
+                if (!willFly && !willSuperBoost && !willDistract && !willConfuse && p.state === PARTICIPANT_STATE.RUNNING && p.boostCount > 0) {
                     willBoost = Math.random() < boostProb;
                 }
-            } else if (p.isBoosting && !p.isFlying && !p.isSuperBoosting && p.state !== "falling" && p.state !== "recovering" && p.fallCount > 0) {
+            } else if (p.isBoosting && !p.isFlying && !p.isSuperBoosting && p.state !== PARTICIPANT_STATE.FALLING && p.state !== PARTICIPANT_STATE.RECOVERING && p.fallCount > 0) {
                 const fallProb = Math.random() * (CONFIG.PROBABILITIES.FALL_MAX - CONFIG.PROBABILITIES.FALL_MIN) + CONFIG.PROBABILITIES.FALL_MIN;
                 willFall = Math.random() < fallProb;
             }
@@ -269,7 +270,7 @@ export class Game {
         this.globalSuperBoosterCount++;
         this.superBoosterCooldown = CONFIG.COOLDOWNS.SUPER_BOOSTER;
         this.ui.addParticipantClass(p, "super-boosting");
-        p.state = "running";
+        p.state = PARTICIPANT_STATE.RUNNING;
         p.fallTimer = 0;
         p.graceTimer = CONFIG.DURATIONS.GRACE_SUPER_BOOSTER;
         this.ui.removeParticipantClass(p, "falling");
@@ -328,7 +329,7 @@ export class Game {
         this.ui.addParticipantClass(p, "flying");
         p.isBoosting = false;
         p.boostTimer = 0;
-        p.state = "running";
+        p.state = PARTICIPANT_STATE.RUNNING;
         p.fallTimer = 0;
         p.graceTimer = 0;
         this.ui.removeParticipantClass(p, "falling");
@@ -341,7 +342,7 @@ export class Game {
     }
 
     applyFall(p, isTargetWinner) {
-        p.state = "falling";
+        p.state = PARTICIPANT_STATE.FALLING;
         p.fallTimer = CONFIG.DURATIONS.FALL;
         p.fallCount--;
         this.ui.addParticipantClass(p, "falling");
@@ -363,7 +364,7 @@ export class Game {
         p.boostCount--;
         p.boostProb = Math.max(0, p.boostProb - 1);
         this.ui.addParticipantClass(p, "boosting");
-        p.state = "recovering";
+        p.state = PARTICIPANT_STATE.RECOVERING;
         p.graceTimer = CONFIG.DURATIONS.GRACE_BOOST;
         p.spriteElement.src = CONFIG.ASSETS.RUNNING;
         this.ui.showSpeech(p, "boosting", 1500);
@@ -374,7 +375,7 @@ export class Game {
     }
 
     updateParticipantPosition(p, tickDuration) {
-        if (p.state === "falling") return;
+        if (p.state === PARTICIPANT_STATE.FALLING) return;
 
         let multiplier = CONFIG.MULTIPLIERS.NORMAL;
         if (p.isSuperBoosting) multiplier = CONFIG.MULTIPLIERS.SUPER_BOOSTER;
@@ -388,8 +389,8 @@ export class Game {
     }
 
     checkFinish(p) {
-        if (p.position >= CONFIG.FINISH_LINE_POS && p.state !== "finished") {
-            p.state = "finished";
+        if (p.position >= CONFIG.FINISH_LINE_POS && p.state !== PARTICIPANT_STATE.FINISHED) {
+            p.state = PARTICIPANT_STATE.FINISHED;
             p.finishTime = Date.now();
             p.position = CONFIG.FINISH_LINE_POS;
 
@@ -402,11 +403,11 @@ export class Game {
 
     compareParticipants(a, b) {
         // 1. Finished ducks always ahead of non-finished
-        if (a.state === "finished" && b.state !== "finished") return -1;
-        if (a.state !== "finished" && b.state === "finished") return 1;
+        if (a.state === PARTICIPANT_STATE.FINISHED && b.state !== PARTICIPANT_STATE.FINISHED) return -1;
+        if (a.state !== PARTICIPANT_STATE.FINISHED && b.state === PARTICIPANT_STATE.FINISHED) return 1;
 
         // 2. If both finished, sort by finish order (index in finishedDucks)
-        if (a.state === "finished" && b.state === "finished") {
+        if (a.state === PARTICIPANT_STATE.FINISHED && b.state === PARTICIPANT_STATE.FINISHED) {
             return this.finishedDucks.indexOf(a) - this.finishedDucks.indexOf(b);
         }
 
@@ -426,7 +427,7 @@ export class Game {
         const total = this.participants.length;
         const sortedParticipants = [...this.participants].sort((a, b) => this.compareParticipants(a, b));
 
-        if (this.drawDirection === "front") {
+        if (this.drawDirection === DRAW_DIRECTION.FRONT) {
             this.targetWinners = sortedParticipants.slice(0, this.drawRank);
         } else {
             // For "back", we want the last N ranks.
@@ -446,7 +447,7 @@ export class Game {
     }
 
     checkCameraEvents(p) {
-        if (!this.camera.isSeventyPercentLockActive && p.state !== "finished" && p.state !== "stopped") {
+        if (!this.camera.isSeventyPercentLockActive && p.state !== PARTICIPANT_STATE.FINISHED && p.state !== PARTICIPANT_STATE.STOPPED) {
             if (p.previousRank > p.currentRank) { // Overtake
                 const isTargetWinner = this.targetWinners.some(t => t.name === p.name);
                 const isTargetLead = isTargetWinner && this.targetWinners.length > 0 && this.targetWinners[0].name === p.name;
@@ -464,7 +465,7 @@ export class Game {
         if (this.lockOverrideTimer > 0) return;
 
         // Find the first target winner that hasn't finished yet
-        const activeTarget = this.targetWinners.find(p => p.state !== "finished" && p.state !== "stopped");
+        const activeTarget = this.targetWinners.find(p => p.state !== PARTICIPANT_STATE.FINISHED && p.state !== PARTICIPANT_STATE.STOPPED);
 
         if (!this.camera.isSeventyPercentLockActive && activeTarget && activeTarget.position >= CONFIG.THRESHOLDS.LOCK_POS) {
             this.camera.isSeventyPercentLockActive = true;
@@ -486,7 +487,7 @@ export class Game {
         const finishedCount = this.finishedDucks.length;
         const unfinishedCount = total - finishedCount;
 
-        if (this.drawDirection === "front") {
+        if (this.drawDirection === DRAW_DIRECTION.FRONT) {
             if (finishedCount >= this.drawRank) shouldEnd = true;
         } else {
             if (unfinishedCount <= 1) shouldEnd = true;
@@ -498,8 +499,8 @@ export class Game {
             this.camera.reset(true);
 
             for (const p of this.participants) {
-                if (p.state !== "finished") {
-                    p.state = "stopped";
+                if (p.state !== PARTICIPANT_STATE.FINISHED) {
+                    p.state = PARTICIPANT_STATE.STOPPED;
                     p.spriteElement.src = CONFIG.ASSETS.WALKING;
                     this.ui.resetRankVisuals(p);
                 }
@@ -516,7 +517,7 @@ export class Game {
         if (leaderPosition < CONFIG.THRESHOLDS.SUPER_BOOSTER_LEADER_POS) return false;
         if (duck.position < CONFIG.THRESHOLDS.SUPER_BOOSTER_MIN_POS) return false;
 
-        if (this.drawDirection === "front") {
+        if (this.drawDirection === DRAW_DIRECTION.FRONT) {
             if (this.finishedDucks.length >= this.drawRank) return false;
             return duck.currentRank > this.drawRank;
         } else {
@@ -541,7 +542,7 @@ export class Game {
         if (duck.position < CONFIG.THRESHOLDS.CONFUSION_MIN_POS || duck.position > CONFIG.THRESHOLDS.CONFUSION_MAX_POS) return false;
         if (duck.position < CONFIG.THRESHOLDS.CONFUSION_MIN_POS || duck.position > CONFIG.THRESHOLDS.CONFUSION_MAX_POS) return false;
 
-        if (this.drawDirection === "front") {
+        if (this.drawDirection === DRAW_DIRECTION.FRONT) {
             if (duck.currentRank > this.drawRank) return false;
         } else {
             if (duck.currentRank > this.drawRank) return false;
@@ -550,7 +551,7 @@ export class Game {
     }
 
     checkActiveGimmicks(p) {
-        if (p.state === "finished" || p.state === "stopped") return;
+        if (p.state === PARTICIPANT_STATE.FINISHED || p.state === PARTICIPANT_STATE.STOPPED) return;
 
         if (p.isSuperBoosting) {
             if (this.camera.isSeventyPercentLockActive) {
