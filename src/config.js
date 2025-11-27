@@ -58,7 +58,7 @@ export const CONFIG = {
         DISTRACTION: 70,
 
         // 혼란 발동 시 카메라 우선순위.
-        CONFUSION: 65,
+        CONFUSION: 73,
 
         FLY: {
             // 타겟 우승자가 날기 사용 시 카메라 우선순위.
@@ -84,7 +84,7 @@ export const CONFIG = {
             // 타겟 우승자가 선두를 추월할 때 카메라 우선순위.
             TARGET_LEAD_MID: 75,
             // 상위권(Top 5) 내에서 추월 발생 시 카메라 우선순위.
-            TOP_RANK: 40,
+            TOP_RANK: 70,
         },
         // 70% 지점 이후 선두 고정 카메라 우선순위. 가장 높게 설정되어 있음.
         LOCK_70_PERCENT: 120,
@@ -113,7 +113,7 @@ export const CONFIG = {
     },
     DURATIONS: {
         // 슈퍼 부스터 지속 시간 (ms).
-        SUPER_BOOSTER: 3500,
+        SUPER_BOOSTER: 3200,
         // 딴짓하기 지속 시간 (ms).
         DISTRACTION: 2000,
         // 혼란 지속 시간 (ms).
@@ -159,7 +159,7 @@ export const CONFIG = {
     },
     MULTIPLIERS: {
         // 슈퍼 부스터 시 속도 배율.
-        SUPER_BOOSTER: 2.5,
+        SUPER_BOOSTER: 2.3,
         // 딴짓하기 시 속도 배율 (느려짐).
         DISTRACTION: 0.2,
         // 혼란 시 속도 배율 (뒤로 감).
