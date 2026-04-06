@@ -135,18 +135,14 @@ function detectLanguage() {
     if (/\/en\/?$/i.test(path)) return 'en';
     if (/\/ko\/?$/i.test(path)) return 'ko';
 
-    // Root path: check localStorage, then browser locale
+    // Root path (/gogoduck/): default to 'ko' since it's the Korean page
+    // Only /gogoduck/en/ should show English
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved && (saved === 'ko' || saved === 'en')) {
         return saved;
     }
 
-    const browserLang = navigator.language || navigator.languages?.[0] || '';
-    if (browserLang.startsWith('ko')) {
-        return 'ko';
-    }
-
-    return 'en';
+    return 'ko';
 }
 
 /**
