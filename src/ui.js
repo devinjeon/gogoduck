@@ -809,8 +809,21 @@ export class UI {
         this.leaderboardShowTimer = setTimeout(() => {
             this.leaderboardVisible = true;
             this._ensureLeaderboardRows(participants);
+            this._positionLeaderboard();
             this.liveLeaderboard.classList.remove("hidden");
         }, delay);
+    }
+
+    _positionLeaderboard() {
+        if (!this.liveLeaderboard) return;
+        // visualViewport.height is NOT inflated by CSS transforms on mobile,
+        // unlike window.innerHeight which mobile browsers inflate during scale().
+        const vpHeight = window.visualViewport
+            ? window.visualViewport.height
+            : window.innerHeight;
+        const lbHeight = this.liveLeaderboard.offsetHeight || 200;
+        this.liveLeaderboard.style.top = `${vpHeight - lbHeight - 16}px`;
+        this.liveLeaderboard.style.bottom = 'auto';
     }
 
     _ensureLeaderboardRows(participants) {
@@ -845,8 +858,8 @@ export class UI {
             this._lbRows.set(p.name, { row, rankSpan, nameSpan });
         }
 
-        // Set container height (position:fixed and bottom/left are handled by CSS)
         this.liveLeaderboard.style.height = `${participants.length * ROW_HEIGHT}px`;
+        this._positionLeaderboard();
     }
 
     updateLeaderboard(participants, drawDirection, drawRank) {
@@ -881,8 +894,9 @@ export class UI {
             }
         }
 
-        // Update container height
+        // Update container height and reposition (every tick to track viewport changes)
         this.liveLeaderboard.style.height = `${total * ROW_HEIGHT}px`;
+        this._positionLeaderboard();
     }
 
     hideLeaderboard() {
