@@ -831,7 +831,7 @@ export class UI {
 
         this.liveLeaderboard.innerHTML = "";
         this._lbRows = new Map();
-        const ROW_HEIGHT = 22;
+        const ROW_HEIGHT = window.innerWidth >= 768 ? 44 : 22;
 
         for (const p of participants) {
             const row = document.createElement("div");
@@ -868,7 +868,7 @@ export class UI {
         this._ensureLeaderboardRows(participants);
 
         const total = participants.length;
-        const ROW_HEIGHT = 22;
+        const ROW_HEIGHT = window.innerWidth >= 768 ? 44 : 22;
 
         for (const p of participants) {
             const entry = this._lbRows.get(p.name);

@@ -602,6 +602,33 @@ body {
   max-width: 100px;
 }
 
+/* PC: scale up leaderboard 1.3x */
+@media (min-width: 768px) {
+  #live-leaderboard {
+    padding: 16px 22px;
+    min-width: 240px;
+    border-radius: 14px;
+  }
+
+  #live-leaderboard .lb-row {
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 30px;
+  }
+
+  #live-leaderboard .lb-row.lb-winner {
+    font-size: 36px;
+  }
+
+  #live-leaderboard .lb-rank {
+    min-width: 56px;
+  }
+
+  #live-leaderboard .lb-name {
+    max-width: 200px;
+  }
+}
+
 /* Custom opacity utilities */
 .bg-opacity-50 {
   background-color: rgba(0, 0, 0, 0.5);
