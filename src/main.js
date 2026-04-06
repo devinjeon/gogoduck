@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         onStart: setupRace,
         onRaceStart: () => {
             game.startRaceLoop();
-            ui.scheduleLeaderboard(3000);
+            ui.scheduleLeaderboard(game.participants, 3000);
         },
         onReset: resetGame,
         onParticipantsChange: () => {

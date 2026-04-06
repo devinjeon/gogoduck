@@ -49,7 +49,6 @@ export class UI {
         this.liveLeaderboard = document.getElementById("live-leaderboard");
         this.leaderboardVisible = false;
         this.leaderboardShowTimer = null;
-        this._cachedLbViewport = null; // Cache viewport before zoom inflation
 
         // Share Config
         this.shareUrl = window.location.href.split("?")[0];
@@ -805,29 +804,13 @@ export class UI {
     }
     // --- Leaderboard ---
 
-    scheduleLeaderboard(delay = 3000) {
+    scheduleLeaderboard(participants, delay = 3000) {
         this.hideLeaderboard();
-        // Cache viewport size BEFORE zoom starts (zoom inflates window.innerWidth/Height on mobile)
-        this._cachedLbViewport = { width: window.innerWidth, height: window.innerHeight };
         this.leaderboardShowTimer = setTimeout(() => {
             this.leaderboardVisible = true;
+            this._ensureLeaderboardRows(participants);
             this.liveLeaderboard.classList.remove("hidden");
-            this._positionLeaderboard();
         }, delay);
-    }
-
-    _positionLeaderboard() {
-        if (!this.liveLeaderboard || !this._cachedLbViewport) return;
-        const vp = this._cachedLbViewport;
-        // Use cached viewport to compute top (= vpHeight - element height - margin)
-        // Set left and top with fixed pixel values based on real viewport
-        this.liveLeaderboard.style.left = "16px";
-        this.liveLeaderboard.style.top = "auto";
-        this.liveLeaderboard.style.bottom = "auto";
-        // Calculate from cached viewport height
-        const lbHeight = this.liveLeaderboard.offsetHeight || 200;
-        const top = vp.height - lbHeight - 16;
-        this.liveLeaderboard.style.top = `${top}px`;
     }
 
     _ensureLeaderboardRows(participants) {
@@ -844,7 +827,7 @@ export class UI {
             row.style.left = "0";
             row.style.right = "0";
             row.style.height = `${ROW_HEIGHT}px`;
-            row.style.transition = "top 0.3s ease";
+
 
             const rankSpan = document.createElement("span");
             rankSpan.className = "lb-rank";
@@ -862,8 +845,7 @@ export class UI {
             this._lbRows.set(p.name, { row, rankSpan, nameSpan });
         }
 
-        // Set container height
-        this.liveLeaderboard.style.position = "fixed";
+        // Set container height (position:fixed and bottom/left are handled by CSS)
         this.liveLeaderboard.style.height = `${participants.length * ROW_HEIGHT}px`;
     }
 
@@ -899,9 +881,8 @@ export class UI {
             }
         }
 
-        // Update container height and reposition
+        // Update container height
         this.liveLeaderboard.style.height = `${total * ROW_HEIGHT}px`;
-        this._positionLeaderboard();
     }
 
     hideLeaderboard() {
@@ -911,7 +892,6 @@ export class UI {
         }
         this.leaderboardVisible = false;
         this._lbRows = null;
-        this._cachedLbViewport = null;
         if (this.liveLeaderboard) {
             this.liveLeaderboard.classList.add("hidden");
             this.liveLeaderboard.innerHTML = "";

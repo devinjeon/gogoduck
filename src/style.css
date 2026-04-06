@@ -550,16 +550,22 @@ body {
   transform: scaleX(-1);
 }
 
-/* Live Leaderboard — positioned via JS to work around mobile viewport inflation */
+/* Live Leaderboard — fixed to bottom-left of viewport via CSS (no JS positioning needed).
+   The element lives outside #main-ui-container so position:fixed is relative to the
+   true viewport, unaffected by camera CSS transforms or browser zoom changes. */
 #live-leaderboard {
   position: fixed !important;
   z-index: 9999 !important;
   transform: none !important;
+  bottom: 16px;
+  left: 16px;
   background-color: rgba(255, 255, 255, 0.75);
   border-radius: 10px;
   padding: 10px 14px;
   min-width: 120px;
-  overflow: visible;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: clip;
   pointer-events: none;
 }
 
