@@ -237,6 +237,9 @@ export class UI {
     markRecordingReady() {
         if (!this.downloadRecordingBtn) return;
         this.downloadRecordingBtn.classList.remove("preparing");
+        // Looks final, but stays non-interactive (no I-beam, no dead clicks) until the
+        // blob is ready and showDownloadRecording() attaches the real href.
+        this.downloadRecordingBtn.classList.add("finalizing");
         if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
         if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");
     }
@@ -248,6 +251,7 @@ export class UI {
             return;
         }
         this.downloadRecordingBtn.classList.remove("preparing");
+        this.downloadRecordingBtn.classList.remove("finalizing");
         if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
         if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");
         this.downloadRecordingBtn.href = url;
@@ -259,6 +263,7 @@ export class UI {
         if (!this.downloadRecordingBtn) return;
         this.downloadRecordingBtn.classList.add("hidden");
         this.downloadRecordingBtn.classList.remove("preparing");
+        this.downloadRecordingBtn.classList.remove("finalizing");
         this.downloadRecordingBtn.removeAttribute("href");
         if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
         if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");

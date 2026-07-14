@@ -61,7 +61,9 @@ export class Recorder {
         this.mediaRecorder.ondataavailable = (e) => {
             if (e.data && e.data.size > 0) this.chunks.push(e.data);
         };
-        this.mediaRecorder.start();
+        // Timeslice: emit data every second so chunks accumulate during the race.
+        // This keeps a valid blob available even if the final `onstop` is delayed.
+        this.mediaRecorder.start(1000);
         this.recording = true;
 
         // If the user stops sharing via the browser's own UI, finalize gracefully.
@@ -83,8 +85,15 @@ export class Recorder {
             }
             this.recording = false;
 
-            this.mediaRecorder.onstop = () => {
-                const type = (this.mediaRecorder && this.mediaRecorder.mimeType) || "video/webm";
+            // Some browsers (notably MP4 MediaRecorder) don't reliably fire `onstop`,
+            // leaving the share stream running and no blob produced. Finalize exactly
+            // once — via onstop if it fires, otherwise via a safety timeout using the
+            // chunks already collected by the timeslice.
+            let finalized = false;
+            const finalize = () => {
+                if (finalized) return;
+                finalized = true;
+                const type = (this.mediaRecorder && this.mediaRecorder.mimeType) || this._lastMimeType || "video/webm";
                 const blob = new Blob(this.chunks, { type });
                 this.chunks = [];
                 this._cleanupBlob();
@@ -93,12 +102,18 @@ export class Recorder {
                 resolve(this.blobUrl);
             };
 
+            this.mediaRecorder.onstop = finalize;
+
             try {
+                if (typeof this.mediaRecorder.requestData === "function") this.mediaRecorder.requestData();
                 this.mediaRecorder.stop();
             } catch (e) {
-                this._stopStream();
-                resolve(this.blobUrl);
+                finalize();
+                return;
             }
+
+            // Safety net if onstop never arrives.
+            setTimeout(finalize, 1500);
         });
     }
 

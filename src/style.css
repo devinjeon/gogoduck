@@ -652,6 +652,12 @@ body {
   pointer-events: none;
 }
 
+/* Finalizing: looks like the ready button but not yet clickable (blob not ready). */
+#download-recording-btn.finalizing {
+  cursor: default;
+  pointer-events: none;
+}
+
 .dl-spinner {
   display: inline-block;
   width: 16px;
