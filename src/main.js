@@ -179,7 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function buildRecordingFilename() {
         const d = new Date();
         const p = (n) => String(n).padStart(2, "0");
-        return `gogoduck-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.webm`;
+        const ext = recorder.fileExtension();
+        return `gogoduck-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.${ext}`;
     }
 
     function getRandomColor() {

@@ -54,6 +54,7 @@ export class Recorder {
 
         this.chunks = [];
         const mimeType = this._pickMimeType();
+        this._lastMimeType = mimeType;
         const options = { videoBitsPerSecond: 6_000_000 };
         if (mimeType) options.mimeType = mimeType;
         this.mediaRecorder = new MediaRecorder(this.stream, options);
@@ -107,10 +108,14 @@ export class Recorder {
     }
 
     _pickMimeType() {
-        // VP8 first: VP9 real-time encoding is far heavier on CPU and makes the
-        // game stutter while recording. H.264 (if present) is hardware-accelerated
-        // on many machines, so try it before falling back to generic webm.
+        // Prefer MP4/H.264: messengers like KakaoTalk treat MP4 as an inline-playable
+        // video, whereas WebM is downloaded as a file. Recent desktop Chrome/Safari can
+        // record MP4 directly. Fall back to WebM (VP8 first — VP9 real-time encoding is
+        // far heavier on CPU and makes the game stutter).
         const candidates = [
+            "video/mp4;codecs=avc1.42E01E",
+            "video/mp4;codecs=h264",
+            "video/mp4",
             "video/webm;codecs=vp8",
             "video/webm;codecs=h264",
             "video/webm",
@@ -122,6 +127,12 @@ export class Recorder {
             }
         }
         return "";
+    }
+
+    /** File extension matching the recorded container ("mp4" or "webm"). */
+    fileExtension() {
+        const type = (this.mediaRecorder && this.mediaRecorder.mimeType) || this._lastMimeType || "";
+        return type.includes("mp4") ? "mp4" : "webm";
     }
 
     _stopStream() {
