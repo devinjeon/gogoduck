@@ -8,6 +8,7 @@ import { CONFIG } from './config.js';
 import { Camera } from './camera.js';
 import { Game } from './game.js';
 import { UI } from './ui.js';
+import { Recorder } from './recorder.js';
 import { STORAGE_KEYS, PARTICIPANT_STATE } from './const.js';
 import { DebugOverlay } from './debug-overlay.js';
 import { initI18n, t, getLang, setLang, switchLang } from './i18n.js';
@@ -22,6 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const camera = new Camera(ui.mainUiContainer);
     const game = new Game(ui, camera);
+
+    // Screen recording (desktop-only). Show the option; disable on unsupported browsers.
+    const recorder = new Recorder();
+    ui.initRecordOption(Recorder.isSupported());
 
     // Debug overlay (activate with #debug in URL)
     const debugOverlay = new DebugOverlay(camera, ui.mainUiContainer);
@@ -73,9 +78,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     ui.setupEventListeners({
         onStart: setupRace,
+        onBeforeRaceStart: async () => {
+            ui.hideDownloadRecording();
+            recorder.clear();
+            if (ui.isRecordEnabled()) {
+                await recorder.start();
+            }
+        },
         onRaceStart: () => {
             game.startRaceLoop();
             ui.scheduleLeaderboard(game.participants, 3000);
+        },
+        onResultsShown: async () => {
+            if (!recorder.recording) return;
+            // 1) "준비중 ... 2초/1초" countdown while still recording the result.
+            await ui.runRecordingCountdown(2);
+            // 2) Flip the button to its final "녹화 영상 다운로드" look — still recording,
+            //    so this ready state is the last thing captured.
+            ui.markRecordingReady();
+            await new Promise(resolve => setTimeout(resolve, 900));
+            // 3) Stop recording and attach the real download link.
+            const url = await recorder.stop();
+            ui.showDownloadRecording(url, buildRecordingFilename());
         },
         onReset: resetGame,
         onParticipantsChange: () => {
@@ -150,6 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function parseParticipants() {
         const rawText = ui.getParticipantsInput();
         return rawText.split(",").map(name => name.trim()).filter(name => name.length > 0);
+    }
+
+    function buildRecordingFilename() {
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        return `gogoduck-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.webm`;
     }
 
     function getRandomColor() {
@@ -251,6 +281,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ui.startTitleDuckAnimation();
         ui.showSetupScreen();
         ui.stopBGM();
+        ui.hideDownloadRecording();
+        recorder.clear();
         loadSettingsFromLocalStorage();
     }
 

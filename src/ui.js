@@ -45,6 +45,20 @@ export class UI {
 
         this.availableSpeechLines = {};
 
+        // Recording (desktop-only screen capture)
+        this.recordOption = document.getElementById("record-option");
+        this.recordCheckbox = document.getElementById("record-checkbox");
+        this.recordNote = document.getElementById("record-note");
+        this.raceRecordOption = document.getElementById("race-record-option");
+        this.raceRecordCheckbox = document.getElementById("race-record-checkbox");
+        this.realStartGroup = document.getElementById("real-start-group");
+        this._recordSupported = false;
+        this.downloadRecordingBtn = document.getElementById("download-recording-btn");
+        this.downloadRecordingLabel = document.getElementById("download-recording-label");
+        this.downloadRecordingStatus = document.getElementById("download-recording-status");
+        this.downloadRecordingCount = document.getElementById("download-recording-count");
+        this.recordingWatermark = document.getElementById("recording-watermark");
+
         // Leaderboard
         this.liveLeaderboard = document.getElementById("live-leaderboard");
         this.leaderboardVisible = false;
@@ -91,6 +105,8 @@ export class UI {
     // --- Event Listeners Setup ---
 
     setupEventListeners(callbacks) {
+        this._callbacks = callbacks;
+
         // Start button
         this.startBtn.addEventListener("click", () => {
             if (typeof gtag === "function") gtag("event", "click_ready");
@@ -98,8 +114,11 @@ export class UI {
         });
 
         // Real start button (countdown trigger)
-        this.realStartBtn.addEventListener("click", () => {
+        this.realStartBtn.addEventListener("click", async () => {
             if (typeof gtag === "function") gtag("event", "click_start");
+            // Start recording on the user gesture (getDisplayMedia requires it),
+            // before the countdown so the whole race is captured.
+            if (callbacks.onBeforeRaceStart) await callbacks.onBeforeRaceStart();
             this.startCountdown(() => {
                 if (callbacks.onRaceStart) callbacks.onRaceStart();
             });
@@ -151,6 +170,98 @@ export class UI {
                 if (typeof gtag === "function") gtag("event", "click_github");
             });
         }
+    }
+
+    // --- Recording ---
+
+    initRecordOption(isSupported) {
+        this._recordSupported = isSupported;
+        if (!this.recordOption) return;
+        // Setup screen: always show the checkbox; on unsupported (mobile) browsers
+        // keep it visible but disabled with a "desktop only" note.
+        this.recordOption.classList.remove("hidden");
+        if (!isSupported) {
+            if (this.recordCheckbox) {
+                this.recordCheckbox.checked = false;
+                this.recordCheckbox.disabled = true;
+            }
+            if (this.recordNote) this.recordNote.classList.remove("hidden");
+        }
+    }
+
+    isRecordEnabled() {
+        if (!this._recordSupported) return false;
+        // The race-screen checkbox is the final decision point (editable right
+        // before start); fall back to the setup checkbox if unavailable.
+        const cb = this.raceRecordCheckbox || this.recordCheckbox;
+        return !!(cb && cb.checked);
+    }
+
+    // Show the button in a non-clickable "preparing" state with a countdown +
+    // spinner, then resolve when the countdown reaches zero. Runs while the final
+    // frame is still being recorded.
+    runRecordingCountdown(totalSeconds) {
+        return new Promise((resolve) => {
+            if (!this.downloadRecordingBtn) {
+                resolve();
+                return;
+            }
+            this.downloadRecordingBtn.classList.remove("hidden");
+            this.downloadRecordingBtn.classList.add("preparing");
+            this.downloadRecordingBtn.removeAttribute("href");
+            if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.recordingPreparing");
+            if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.remove("hidden");
+
+            let remaining = totalSeconds;
+            const paint = () => {
+                if (this.downloadRecordingCount) this.downloadRecordingCount.textContent = t("recording.secondsLeft", remaining);
+            };
+            paint();
+
+            const tick = () => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    resolve();
+                    return;
+                }
+                paint();
+                setTimeout(tick, 1000);
+            };
+            setTimeout(tick, 1000);
+        });
+    }
+
+    // Switch the button to its final "download" look while the recording is still
+    // running, so this ready state is captured as the last frame. The real href is
+    // attached afterwards via showDownloadRecording once the blob is available.
+    markRecordingReady() {
+        if (!this.downloadRecordingBtn) return;
+        this.downloadRecordingBtn.classList.remove("preparing");
+        if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
+        if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");
+    }
+
+    showDownloadRecording(url, filename) {
+        if (!this.downloadRecordingBtn) return;
+        if (!url) {
+            this.hideDownloadRecording();
+            return;
+        }
+        this.downloadRecordingBtn.classList.remove("preparing");
+        if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
+        if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");
+        this.downloadRecordingBtn.href = url;
+        this.downloadRecordingBtn.setAttribute("download", filename);
+        this.downloadRecordingBtn.classList.remove("hidden");
+    }
+
+    hideDownloadRecording() {
+        if (!this.downloadRecordingBtn) return;
+        this.downloadRecordingBtn.classList.add("hidden");
+        this.downloadRecordingBtn.classList.remove("preparing");
+        this.downloadRecordingBtn.removeAttribute("href");
+        if (this.downloadRecordingStatus) this.downloadRecordingStatus.classList.add("hidden");
+        if (this.downloadRecordingLabel) this.downloadRecordingLabel.textContent = t("btn.downloadRecording");
     }
 
     // --- Setup & Input ---
@@ -223,6 +334,7 @@ export class UI {
         this.resultsModal.classList.add("hidden");
         this.resultsModalOverlay.classList.add("hidden");
         if (this.shareButtons) this.shareButtons.classList.add("hidden");
+        if (this.recordingWatermark) this.recordingWatermark.classList.remove("hidden");
 
         // Hide BMC button and language switcher
         const bmcButton = document.getElementById("bmc-button-container");
@@ -240,6 +352,7 @@ export class UI {
         this.raceScreen.classList.add("hidden");
         this.resultsModal.classList.add("hidden");
         this.resultsModalOverlay.classList.add("hidden");
+        if (this.recordingWatermark) this.recordingWatermark.classList.add("hidden");
         if (this.raceFinishOverlay) this.raceFinishOverlay.classList.add("hidden");
         if (this.shareButtons) this.shareButtons.classList.remove("hidden");
 
@@ -260,9 +373,21 @@ export class UI {
     }
 
     showRealStartOverlay() {
-        // Move button to fixed viewport-center anchor BEFORE showing overlay
+        // On desktop, mirror the setup checkbox and let the user still toggle
+        // recording right before starting. On mobile it stays hidden (omitted).
+        if (this.raceRecordOption && this.raceRecordCheckbox) {
+            if (this._recordSupported) {
+                this.raceRecordCheckbox.checked = !!(this.recordCheckbox && this.recordCheckbox.checked);
+                this.raceRecordOption.classList.remove("hidden");
+            } else {
+                this.raceRecordOption.classList.add("hidden");
+            }
+        }
+
+        // Move the button group to the fixed viewport-center anchor BEFORE showing.
+        const group = this.realStartGroup || this.realStartBtn;
         const anchor = document.getElementById("viewport-center-anchor");
-        anchor.appendChild(this.realStartBtn);
+        anchor.appendChild(group);
         this._positionAnchorAtViewportCenter(anchor);
         anchor.classList.add("active");
         this.realStartOverlay.classList.remove("hidden");
@@ -270,10 +395,11 @@ export class UI {
 
     hideRealStartOverlay() {
         this.realStartOverlay.classList.add("hidden");
-        // Return button to its original overlay
+        // Return the button group to its original overlay
+        const group = this.realStartGroup || this.realStartBtn;
         const anchor = document.getElementById("viewport-center-anchor");
         anchor.classList.remove("active");
-        this.realStartOverlay.appendChild(this.realStartBtn);
+        this.realStartOverlay.appendChild(group);
     }
 
     showCountdown(count) {
@@ -584,6 +710,13 @@ export class UI {
         this.playClapSound();
         this.resultsModal.classList.remove("hidden");
         this.resultsModalOverlay.classList.remove("hidden");
+
+        // Recording (if any): the winner zoom sequence and the results modal are now
+        // on screen. main.js runs the "preparing" countdown (which keeps the final
+        // frame recording) and then stops.
+        if (this._callbacks && this._callbacks.onResultsShown) {
+            this._callbacks.onResultsShown();
+        }
     }
 
     async zoomAndHighlightWinner(participant, camera) {
@@ -822,7 +955,9 @@ export class UI {
             ? window.visualViewport.height
             : window.innerHeight;
         const lbHeight = this.liveLeaderboard.offsetHeight || 200;
-        this.liveLeaderboard.style.top = `${vpHeight - lbHeight - 16}px`;
+        // Leave room beneath the leaderboard for the recording watermark.
+        const watermarkClearance = window.innerWidth >= 768 ? 34 : 26;
+        this.liveLeaderboard.style.top = `${vpHeight - lbHeight - 16 - watermarkClearance}px`;
         this.liveLeaderboard.style.bottom = 'auto';
     }
 

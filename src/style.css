@@ -633,3 +633,61 @@ body {
 .bg-opacity-50 {
   background-color: rgba(0, 0, 0, 0.5);
 }
+
+/* Download recording button — purple isn't in the prebuilt Tailwind CSS,
+   so color it here (layout/text-white utilities already exist). */
+#download-recording-btn {
+  background-color: #8b5cf6;
+}
+
+#download-recording-btn:hover {
+  background-color: #7c3aed;
+}
+
+/* Preparing state: dimmed while the recording finalizes. */
+#download-recording-btn.preparing {
+  background-color: #8b5cf6;
+  opacity: 0.9;
+  cursor: default;
+  pointer-events: none;
+}
+
+.dl-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dl-spin 0.7s linear infinite;
+}
+
+@keyframes dl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Recording watermark — pinned to the viewport bottom-left, just under the live
+   leaderboard (where the eye goes). Faded so it's unobtrusive on screen but still
+   legible in shared recordings. */
+#recording-watermark {
+  position: fixed;
+  bottom: 14px;
+  left: 16px;
+  z-index: 50;
+  pointer-events: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(14, 116, 144, 0.45);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+@media (min-width: 768px) {
+  #recording-watermark {
+    bottom: 18px;
+    left: 24px;
+    font-size: 15px;
+  }
+}

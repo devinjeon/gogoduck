@@ -64,11 +64,19 @@
   <div class="relative w-full max-w-3xl mt-7 md:mt-0 -translate-y-7">
     <div id="real-start-overlay"
       class="hidden absolute inset-0 bg-black bg-opacity-50 z-30 flex justify-center items-center rounded-2xl">
-      <button id="real-start-btn"
-        class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-3xl animate-pulse-start"
-        data-i18n="btn.start">
-        출발!
-      </button>
+      <div id="real-start-group" class="flex flex-col items-center gap-4">
+        <button id="real-start-btn"
+          class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg text-3xl animate-pulse-start"
+          data-i18n="btn.start">
+          출발!
+        </button>
+        <label id="race-record-option" for="race-record-checkbox"
+          class="hidden flex items-center gap-2 text-white text-sm font-medium cursor-pointer">
+          <input type="checkbox" id="race-record-checkbox"
+            class="w-4 h-4 rounded border-gray-300 text-cyan-500 focus:ring-cyan-500" />
+          <span data-i18n="label.record">레이스 녹화하기</span>
+        </label>
+      </div>
     </div>
     <div id="countdown-overlay"
       class="hidden absolute inset-0 bg-black bg-opacity-50 rounded-2xl flex justify-center items-center">
@@ -194,6 +202,17 @@
           </div>
         </div>
 
+        <div id="record-option" class="mb-4 hidden">
+          <label for="record-checkbox" class="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input type="checkbox" id="record-checkbox"
+              class="w-4 h-4 rounded border-gray-300 text-cyan-500 focus:ring-cyan-500" />
+            <span data-i18n="label.record">레이스 녹화하기</span>
+          </label>
+          <p id="record-note" class="mt-1 ml-6 text-xs text-gray-400 hidden" data-i18n="note.recordPcOnly">
+            PC 브라우저에서만 지원됩니다
+          </p>
+        </div>
+
         <button id="start-btn"
           class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-300 ease-in-out text-lg transform hover:scale-105">
           <span data-i18n="btn.ready">준비!</span>
@@ -244,6 +263,15 @@
               class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg flex items-center justify-center">
               <span data-i18n="btn.shareResults">결과 공유</span>
             </button>
+
+            <a id="download-recording-btn" href="#" download
+              class="hidden w-full text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg flex items-center justify-center">
+              <span id="download-recording-label" data-i18n="btn.downloadRecording">녹화 영상 다운로드</span>
+              <span id="download-recording-status" class="hidden ml-auto flex items-center gap-2">
+                <span id="download-recording-count"></span>
+                <span class="dl-spinner"></span>
+              </span>
+            </a>
 
             <button id="reset-btn"
               class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-300 ease-in-out text-lg flex items-center justify-center">
@@ -329,6 +357,10 @@
 
 <!-- Live Leaderboard (outside transform parent so position:fixed works with zoom) -->
 <div id="live-leaderboard" class="hidden"></div>
+
+  <!-- Recording watermark: fixed to the viewport so it stays put regardless of
+       the in-race camera zoom (which transforms #main-ui-container). -->
+  <div id="recording-watermark" class="hidden">https://hyojun.me/gogoduck</div>
 
 </body>
 
